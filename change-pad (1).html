@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Change Pad</title>
+<style>
+:root{--bg:#eef1f4;--paper:#fbfcfd;--ink:#1d2630;--mute:#5f6c78;--line:#d8dee4;--acc:#1f6f8b;--gr:34 160 80;--rd:214 56 56;--vi:132 84 214;--ye:222 176 24}
+@media (prefers-color-scheme:dark){:root{--bg:#14181d;--paper:#1b2127;--ink:#e4e9ee;--mute:#8d9aa7;--line:#2c353e;--acc:#5cb8d6;--gr:70 200 110;--rd:240 100 100;--vi:170 130 244;--ye:236 200 70}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;padding:20px;padding-top:max(20px,env(safe-area-inset-top))}
+main{max-width:980px;margin:0 auto;display:grid;gap:16px}
+h1{font-size:26px;margin:0;letter-spacing:-.01em}h2{font-size:16px;margin:0 0 10px}
+.sub{margin:4px 0 0;color:var(--mute);max-width:66ch}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:16px}
+.k-add{--f:rgb(var(--gr)/.13);--f2:rgb(var(--gr)/.28);--bd:rgb(var(--gr)/.45)}
+.k-del{--f:rgb(var(--rd)/.12);--f2:rgb(var(--rd)/.26);--bd:rgb(var(--rd)/.45)}
+.k-rep{--f:rgb(var(--vi)/.13);--f2:rgb(var(--vi)/.28);--bd:rgb(var(--vi)/.45)}
+.k-nf{--f:linear-gradient(135deg,rgb(var(--ye)/.24),rgb(var(--gr)/.24));--f2:linear-gradient(135deg,rgb(var(--ye)/.45),rgb(var(--gr)/.45));--bd:rgb(var(--gr)/.5)}
+.k-rf{--f:linear-gradient(135deg,rgb(var(--ye)/.24),rgb(var(--rd)/.24));--f2:linear-gradient(135deg,rgb(var(--ye)/.45),rgb(var(--rd)/.45));--bd:rgb(var(--rd)/.5)}
+.sides{display:grid;grid-template-columns:1fr 1fr;gap:16px}@media(max-width:640px){.sides{grid-template-columns:1fr}}
+.drop{border:2px dashed var(--line);border-radius:10px;padding:16px;text-align:center;color:var(--mute)}
+.drop.on{border-color:var(--acc);color:var(--ink)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.drop .row{justify-content:center;margin-top:8px}
+button{font:inherit;cursor:pointer;padding:8px 13px;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink)}
+button:focus-visible,summary:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.st{margin:10px 0 0;min-height:1.4em;color:var(--mute);font-size:13px}.st b{color:var(--ink)}
+.opt{display:flex;gap:8px;align-items:center;color:var(--mute)}
+#sum{font-weight:600;margin:0}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+.tab{background:var(--f);border-color:var(--bd);display:flex;gap:8px;align-items:center}
+.tab.on{background:var(--f2);font-weight:600}
+.tab span{font-size:12px;padding:0 7px;border-radius:9px;background:var(--f2)}
+#panel{background:var(--f);border:1px solid var(--bd);border-radius:10px;padding:12px;margin-top:8px;min-height:120px}
+.empty{color:var(--mute);margin:8px}
+details.fl{border:1px solid var(--bd);border-radius:8px;margin-bottom:10px}
+details.fl summary{cursor:pointer;padding:9px 12px;font:600 13px ui-monospace,Menlo,Consolas,monospace;word-break:break-all}
+.fb{padding:0 10px 10px}
+.hk{border:1px solid var(--bd);border-radius:8px;margin-top:8px;overflow:hidden}
+.hl{padding:5px 10px;font-size:12px;color:var(--mute);border-bottom:1px solid var(--bd)}
+.sb{padding:4px 10px 0;font-size:12px;font-weight:600;color:var(--mute)}
+.ln{display:flex;font:13px/1.55 ui-monospace,Menlo,Consolas,monospace}
+.no{flex:none;width:52px;text-align:right;padding-right:10px;color:var(--mute);user-select:none}
+.mk{flex:none;width:18px;color:var(--mute);user-select:none}
+.tx{white-space:pre-wrap;word-break:break-word;min-height:1.55em;flex:1;padding-right:8px}
+mark{background:var(--bd);color:inherit;border-radius:3px}
+.more{padding:4px 10px;color:var(--mute);font-size:12px}
+.note{color:var(--mute);font-size:13px;margin:0}
+</style>
+</head>
+<body>
+<main>
+ <header>
+  <h1>Change Pad</h1>
+  <p class="sub">Compare your original project with the revised one. Change Pad lists exactly what changed, file by file and line by line, so you can edit only those places in your live repository instead of deleting and re-uploading everything.</p>
+ </header>
+
+ <section class="sides" id="sides"></section>
+
+ <section class="card">
+  <div class="row" style="justify-content:space-between">
+   <p id="sum">Load both sides to compare.</p>
+   <label class="opt"><input type="checkbox" id="ws" checked> Ignore spacing-only changes</label>
+  </div>
+  <div class="tabs" id="tabs" role="tablist"></div>
+  <div id="panel" role="tabpanel"></div>
+  <div class="row" style="margin-top:10px">
+   <button id="cTab" disabled>Copy this tab</button>
+   <button id="cAll" disabled>Copy full report</button>
+   <button id="dAll" disabled>Download report</button>
+  </div>
+  <p class="note" style="margin-top:10px">Removed text and Replaced text show only the lines that changed, with their line numbers. Files deleted completely appear under Removed files. Folders and bundles are matched by file path, and a shared top folder name is ignored, so <b>site/</b> and <b>site-v2/</b> still line up.</p>
+ </section>
+</main>
+
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+const SKIP=/(^|\/)(node_modules|\.git|dist|build|__pycache__|\.next|\.venv|\.idea|\.vscode)\//;
+const BIN=/\.(png|jpe?g|gif|webp|ico|bmp|pdf|zip|gz|tar|7z|rar|exe|dll|so|dylib|mp3|mp4|mov|avi|wav|woff2?|ttf|otf|eot|class|jar|psd|sqlite|db|lock)$/i;
+const MAXF=1024*1024,LIM=12e6,CAP=400;
+const TABS=[["add","Added text"],["del","Removed text"],["rep","Replaced text"],["nf","Added files"],["rf","Removed files"]];
+const side={a:null,b:null};let cur=null,tab="add";
+
+function el(t,c,x){const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e}
+
+/* ---------- loading ---------- */
+function pack(map,skipped,label){
+  const ks=[...map.keys()];
+  if(ks.length&&ks.every(k=>k.includes("/"))){
+    const r=ks[0].split("/")[0];
+    if(ks.every(k=>k.startsWith(r+"/"))){const m=new Map();map.forEach((v,k)=>m.set(k.slice(r.length+1),v));return{map:m,skipped,label:label||r}}
+  }
+  return{map,skipped,label:label||"files"};
+}
+async function load(list){
+  const map=new Map();let skipped=0;
+  for(const f of list){
+    const p=(f.webkitRelativePath||f._path||f.name).replace(/^\.?\//,"");
+    if(SKIP.test("/"+p)||BIN.test(p)||f.size>MAXF){skipped++;continue}
+    try{const t=await f.text();if(t.indexOf("\u0000")>-1){skipped++;continue}map.set(p,t)}catch(e){skipped++}
+  }
+  return pack(map,skipped);
+}
+function fromBundle(html){
+  const d=new DOMParser().parseFromString(html,"text/html"),map=new Map();
+  d.querySelectorAll("script[data-path]").forEach(s=>map.set(s.dataset.path,s.textContent.replace(/<\\\/script/gi,"<"+"/script")));
+  return map;
+}
+async function ingest(k,list){
+  list=[...list];if(!list.length)return;
+  $("s"+k).textContent="Reading files...";
+  let r;
+  if(list.length===1&&/\.html?$/i.test(list[0].name)){
+    const t=await list[0].text();
+    if(t.indexOf("data-path=")>-1)r=pack(fromBundle(t),0,list[0].name);
+  }
+  side[k]=r||await load(list);
+  const s=side[k];
+  $("s"+k).innerHTML="<b></b> "+s.map.size+" files"+(s.skipped?", "+s.skipped+" skipped (binary or ignored)":"");
+  $("s"+k).firstChild.textContent=s.label;
+  compare();
+}
+function walk(en,out){
+  return new Promise(res=>{
+    if(en.isFile)en.file(f=>{f._path=en.fullPath.slice(1);out.push(f);res()},()=>res());
+    else{const rd=en.createReader(),all=[];
+      (function more(){rd.readEntries(async es=>{
+        if(!es.length){await Promise.all(all.map(x=>walk(x,out)));res()}else{all.push(...es);more()}
+      },()=>res())})();}
+  });
+}
+[["a","Original","Your current live version"],["b","Revised","The new version made by AI or by you"]].forEach(([k,t,h])=>{
+  const c=el("div","card");
+  c.innerHTML="<h2></h2><div class=\"drop\" id=\"d"+k+"\"><span></span><div class=\"row\"><button type=\"button\" id=\"f"+k+"\">Select folder</button><button type=\"button\" id=\"b"+k+"\">Open bundle .html</button></div></div><p class=\"st\" id=\"s"+k+"\"></p><input type=\"file\" id=\"i"+k+"\" webkitdirectory multiple hidden><input type=\"file\" id=\"j"+k+"\" accept=\".html,.htm\" hidden>";
+  c.querySelector("h2").textContent=t;c.querySelector(".drop span").textContent=h+". Drop a folder or a Bundle Pad file here.";
+  $("sides").appendChild(c);
+  $("f"+k).onclick=()=>$("i"+k).click();$("b"+k).onclick=()=>$("j"+k).click();
+  $("i"+k).onchange=e=>{ingest(k,e.target.files);e.target.value=""};
+  $("j"+k).onchange=e=>{ingest(k,e.target.files);e.target.value=""};
+  const d=$("d"+k);
+  ["dragenter","dragover"].forEach(v=>d.addEventListener(v,e=>{e.preventDefault();d.classList.add("on")}));
+  ["dragleave","drop"].forEach(v=>d.addEventListener(v,e=>{e.preventDefault();d.classList.remove("on")}));
+  d.addEventListener("drop",async e=>{
+    const en=[...(e.dataTransfer.items||[])].map(i=>i.webkitGetAsEntry&&i.webkitGetAsEntry()).filter(Boolean);
+    if(en.length){const out=[];await Promise.all(en.map(x=>walk(x,out)));ingest(k,out)}else ingest(k,e.dataTransfer.files);
+  });
+});
+
+/* ---------- diff ---------- */
+function lines(t){const l=t.split(/\r?\n/);if(l.length&&l[l.length-1]==="")l.pop();return l}
+function ops(a,b){
+  const n=a.length,m=b.length,w=m+1,T=Math.min(n,m)<65535?Uint16Array:Uint32Array,d=new T((n+1)*w),o=[];
+  for(let i=n-1;i>=0;i--)for(let j=m-1;j>=0;j--)d[i*w+j]=a[i]===b[j]?d[(i+1)*w+j+1]+1:Math.max(d[(i+1)*w+j],d[i*w+j+1]);
+  let i=0,j=0;
+  while(i<n&&j<m){
+    if(a[i]===b[j]){o.push(["=",i,j]);i++;j++}
+    else if(d[(i+1)*w+j]>=d[i*w+j+1])o.push(["-",i++,j]);
+    else o.push(["+",i,j++]);
+  }
+  while(i<n)o.push(["-",i++,j]);
+  while(j<m)o.push(["+",i,j++]);
+  return o;
+}
+function diff(file,A,B,ws,R){
+  const key=s=>ws?s.replace(/\s+/g," ").trim():s,ka=A.map(key),kb=B.map(key);
+  let s=0;while(s<A.length&&s<B.length&&ka[s]===kb[s])s++;
+  let ea=A.length,eb=B.length;while(ea>s&&eb>s&&ka[ea-1]===kb[eb-1]){ea--;eb--}
+  if(s===ea&&s===eb)return;
+  let o;
+  if((ea-s)*(eb-s)>LIM){o=[];for(let i=s;i<ea;i++)o.push(["-",i,s]);for(let j=s;j<eb;j++)o.push(["+",ea,j])}
+  else o=ops(ka.slice(s,ea),kb.slice(s,eb)).map(x=>[x[0],x[1]+s,x[2]+s]);
+  o.push(["=",ea,eb]);
+  let dl=[],ad=[];
+  o.forEach(x=>{
+    if(x[0]==="-")dl.push(x[1]);else if(x[0]==="+")ad.push(x[2]);
+    else{
+      if(dl.length&&ad.length)R.rep.push({file,at:dl[0]+1,nat:ad[0]+1,old:dl.map(i=>A[i]),neu:ad.map(j=>B[j])});
+      else if(dl.length)R.del.push({file,at:dl[0]+1,lines:dl.map(i=>A[i])});
+      else if(ad.length)R.add.push({file,at:ad[0]+1,lines:ad.map(j=>B[j])});
+      dl=[];ad=[];
+    }
+  });
+}
+function compare(){
+  if(!side.a||!side.b){render();return}
+  const ws=$("ws").checked,R={add:[],del:[],rep:[],nf:[],rf:[]};
+  [...new Set([...side.a.map.keys(),...side.b.map.keys()])].sort().forEach(p=>{
+    const A=side.a.map.get(p),B=side.b.map.get(p);
+    if(A===undefined)R.nf.push({file:p,lines:lines(B)});
+    else if(B===undefined)R.rf.push({file:p,lines:lines(A)});
+    else if(A!==B)diff(p,lines(A),lines(B),ws,R);
+  });
+  cur=R;render();
+}
+$("ws").onchange=compare;
+
+/* ---------- rendering ---------- */
+const rng=(s,n)=>n===1?"Line "+s:"Lines "+s+"\u2013"+(s+n-1);
+function row(no,mk,x){
+  const r=el("div","ln"),t=el("span","tx");
+  r.append(el("span","no",no),el("span","mk",mk));
+  if(typeof x==="string")t.textContent=x;else{t.append(x[0]);t.append(el("mark",null,x[1]));t.append(x[2])}
+  r.append(t);return r;
+}
+function block(ls,start,mk,parts,cap){
+  const f=document.createDocumentFragment();cap=cap||CAP;
+  ls.slice(0,cap).forEach((l,i)=>f.append(row(start+i,mk,parts?parts[i]:l)));
+  if(ls.length>cap)f.append(el("div","more","... "+(ls.length-cap)+" more lines (use Copy to get everything)"));
+  return f;
+}
+function hl(o,n){
+  let p=0;while(p<o.length&&p<n.length&&o[p]===n[p])p++;
+  let s=0;while(s<o.length-p&&s<n.length-p&&o[o.length-1-s]===n[n.length-1-s])s++;
+  const cut=x=>[x.slice(0,p),x.slice(p,x.length-s),x.slice(x.length-s)];
+  return[cut(o),cut(n)];
+}
+function hunk(label){const d=el("div","hk");d.append(el("div","hl",label));return d}
+function fill(body,arr){
+  arr.forEach(h=>{
+    let x;
+    if(tab==="add"){x=hunk(rng(h.at,h.lines.length)+" added");x.append(block(h.lines,h.at,"+"))}
+    else if(tab==="del"){x=hunk(rng(h.at,h.lines.length)+" removed (line numbers from the original)");x.append(block(h.lines,h.at,"\u2212"))}
+    else if(tab==="rep"){
+      x=hunk(rng(h.at,h.old.length)+" replaced"+(h.nat!==h.at?" (now at line "+h.nat+")":""));
+      let pa=null,pb=null;
+      if(h.old.length===h.neu.length){pa=[];pb=[];h.old.forEach((l,i)=>{const r=hl(l,h.neu[i]);pa.push(r[0]);pb.push(r[1])})}
+      x.append(el("div","sb","Before"),block(h.old,h.at,"\u2212",pa),el("div","sb","After"),block(h.neu,h.nat,"+",pb));
+    }else if(tab==="nf"){x=hunk(h.lines.length+" lines, whole file is new");x.append(block(h.lines,1,"+",null,3000))}
+    else{x=hunk(h.lines.length+" lines, whole file was deleted");x.append(block(h.lines,1,"\u2212",null,3000))}
+    body.append(x);
+  });
+}
+function render(){
+  const tb=$("tabs");tb.textContent="";
+  TABS.forEach(([k,t])=>{
+    const b=el("button","tab k-"+k+(k===tab?" on":""));b.type="button";b.setAttribute("role","tab");b.setAttribute("aria-selected",k===tab);
+    b.append(t+" ",el("span",null,cur?cur[k].length:0));
+    b.onclick=()=>{tab=k;render()};tb.append(b);
+  });
+  ["cTab","cAll","dAll"].forEach(i=>$(i).disabled=!cur);
+  const box=$("panel");box.textContent="";box.className="k-"+tab;
+  if(!cur){$("sum").textContent="Load both sides to compare.";box.append(el("p","empty","Load the original and the revised version to see the changes."));return}
+  const nl=a=>a.reduce((s,h)=>s+(h.lines?h.lines.length:0),0);
+  const files=new Set([...cur.add,...cur.del,...cur.rep].map(h=>h.file));
+  $("sum").textContent=files.size+" changed files, "+cur.nf.length+" new files, "+cur.rf.length+" deleted files, "+nl(cur.add)+" lines added, "+(nl(cur.del)+cur.rep.reduce((s,h)=>s+h.old.length,0))+" removed or replaced";
+  const items=cur[tab];
+  if(!items.length){box.append(el("p","empty","Nothing found in this tab."));return}
+  const g=new Map();items.forEach(h=>{if(!g.has(h.file))g.set(h.file,[]);g.get(h.file).push(h)});
+  let n=0;
+  g.forEach((arr,file)=>{
+    const d=el("details","fl"),body=el("div","fb");
+    d.append(el("summary",null,file+"  ("+arr.length+(tab==="nf"?" new file":tab==="rf"?" deleted file":arr.length>1?" changes":" change")+")"),body);
+    d.open=n++<8;
+    if(d.open)fill(body,arr);else d.addEventListener("toggle",()=>{if(d.open&&!body.firstChild)fill(body,arr)});
+    box.append(d);
+  });
+}
+
+/* ---------- report ---------- */
+function report(only){
+  const o=["CHANGE REPORT","Original: "+(side.a?side.a.label:"-")+"  |  Revised: "+(side.b?side.b.label:"-"),""];
+  TABS.forEach(([k,t])=>{
+    if(only&&only!==k)return;
+    o.push("=== "+t.toUpperCase()+" ("+cur[k].length+") ===");
+    cur[k].forEach(h=>{
+      if(k==="add")o.push("FILE: "+h.file,"  "+rng(h.at,h.lines.length)+" added:",...h.lines.map(l=>"  + "+l));
+      else if(k==="del")o.push("FILE: "+h.file,"  "+rng(h.at,h.lines.length)+" removed (original line numbers):",...h.lines.map(l=>"  - "+l));
+      else if(k==="rf")o.push("REMOVED FILE: "+h.file,...h.lines.map(l=>"  - "+l));
+      else if(k==="rep")o.push("FILE: "+h.file,"  "+rng(h.at,h.old.length)+" replaced (new text starts at line "+h.nat+"):",...h.old.map(l=>"  - "+l),...h.neu.map(l=>"  + "+l));
+      else o.push("NEW FILE: "+h.file,...h.lines.map(l=>"  + "+l));
+      o.push("");
+    });
+    if(!cur[k].length)o.push("(none)","");
+  });
+  return o.join("\n");
+}
+function flash(b,t){const o=b.textContent;b.textContent=t;setTimeout(()=>b.textContent=o,1200)}
+function copy(txt,b){
+  (navigator.clipboard?navigator.clipboard.writeText(txt):Promise.reject()).then(()=>flash(b,"Copied"),()=>{
+    const a=document.createElement("textarea");a.value=txt;document.body.appendChild(a);a.select();
+    try{document.execCommand("copy");flash(b,"Copied")}catch(e){flash(b,"Copy failed")}a.remove();
+  });
+}
+$("cTab").onclick=e=>copy(report(tab),e.target);
+$("cAll").onclick=e=>copy(report(),e.target);
+$("dAll").onclick=()=>{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([report()],{type:"text/plain"}));a.download="change-report.txt";document.body.appendChild(a);a.click();a.remove()};
+
+render();
+})();
+</script>
+</body>
+</html>
